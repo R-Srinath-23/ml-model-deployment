@@ -1,50 +1,184 @@
-# ML Model Deployment as a Monitored REST API
+# Iris Flower Classification — REST API
 
-## Project Overview
+A production-style REST API that serves a trained **Random Forest Classifier** to predict Iris flower species from petal and sepal measurements. Built with **FastAPI** and **scikit-learn**.
 
-This project will deploy a machine learning classification model as a REST API using FastAPI. The API will accept input data, validate it, pass it to a trained machine learning model, and return the prediction as a JSON response.
+---
 
-## Dataset
+## 📌 Overview
 
-The project uses the Iris dataset provided by Scikit-learn through `load_iris()`.
+| | |
+|---|---|
+| **Problem** | Multi-class classification |
+| **Dataset** | Iris (150 samples, 3 classes, balanced) |
+| **Model** | Random Forest Classifier |
+| **API Framework** | FastAPI + Uvicorn |
+| **Serialization** | joblib |
 
-The dataset contains four input features:
+---
 
-- Sepal length
-- Sepal width
-- Petal length
-- Petal width
+## 📊 Dataset
 
-The model will classify the flower into one of three species:
+The dataset contains **150 samples** across **3 species** — 50 samples each.
 
-- Setosa
-- Versicolor
-- Virginica
+| Feature | Min | Max | Mean |
+|---|---|---|---|
+| Sepal Length (cm) | 4.3 | 7.9 | 5.84 |
+| Sepal Width (cm) | 2.0 | 4.4 | 3.06 |
+| Petal Length (cm) | 1.0 | 6.9 | 3.76 |
+| Petal Width (cm) | 0.1 | 2.5 | 1.20 |
 
-## Machine Learning Problem
+**Target Classes:**
 
-This is a supervised classification problem.
+| ID | Species |
+|----|---------|
+| 0 | *Iris setosa* |
+| 1 | *Iris versicolor* |
+| 2 | *Iris virginica* |
 
-The goal is to predict the species of an Iris flower based on its sepal and petal measurements.
+---
 
-## Machine Learning Model
+## 🎯 API Contract
 
-The planned model is:
+### `POST /predict`
 
-**RandomForestClassifier**
-
-The model will be trained using the Iris dataset and saved so that it can later be loaded by the FastAPI application.
-
-## API Contract
-
-The `/predict` endpoint accepts four numerical values representing the sepal length, sepal width, petal length, and petal width of an Iris flower. The API validates the input and sends the validated values to the trained RandomForestClassifier model. The model predicts the Iris flower species as Setosa, Versicolor, or Virginica. The API returns the predicted species as a JSON response.
-
-### Example Request
+**Request body:**
 
 ```json
 {
-    "sepal_length": 5.1,
-    "sepal_width": 3.5,
-    "petal_length": 1.4,
-    "petal_width": 0.2
+  "sepal_length": 5.1,
+  "sepal_width": 3.5,
+  "petal_length": 1.4,
+  "petal_width": 0.2
 }
+```
+
+**Response:**
+
+```json
+{
+  "predicted_class": "setosa",
+  "predicted_class_id": 0,
+  "confidence": 0.97
+}
+```
+
+---
+
+## 🏗️ Project Structure
+
+```
+ml-api-project/
+├── app/
+│   ├── main.py              # FastAPI app entry point
+│   ├── models/              # Pydantic request/response schemas
+│   └── routers/             # API route definitions
+├── ml/
+│   ├── train.py             # Model training script
+│   └── saved_model/
+│       └── model.joblib     # Serialized trained model
+├── data/
+│   └── iris_dataset.csv     # Dataset
+├── tests/                   # Unit and integration tests
+├── requirements.txt
+├── .gitignore
+└── README.md
+```
+
+---
+
+## Setup & Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/R-Srinath-23/ml-api-project.git
+cd ml-api-project
+```
+
+### 2. Create and activate a virtual environment
+
+```bash
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 🤖 Train the Model
+
+```bash
+python ml/train.py
+```
+
+This loads `iris_dataset.csv`, trains the Random Forest Classifier, prints accuracy on the test set, and saves the model to `ml/saved_model/model.joblib`.
+
+---
+
+## 🚀 Run the API
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Server starts at `http://127.0.0.1:8000`
+
+---
+
+## 📖 Interactive Docs
+
+| Interface | URL |
+|-----------|-----|
+| Swagger UI | http://127.0.0.1:8000/docs |
+| ReDoc | http://127.0.0.1:8000/redoc |
+
+---
+
+## 🔌 Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Health check |
+| `POST` | `/predict` | Predict Iris species from measurements |
+
+---
+
+**Python:**
+
+```python
+import requests
+
+response = requests.post(
+    "http://127.0.0.1:8000/predict",
+    json={
+        "sepal_length": 5.1,
+        "sepal_width": 3.5,
+        "petal_length": 1.4,
+        "petal_width": 0.2
+    }
+)
+print(response.json())
+# {"predicted_class": "setosa", "predicted_class_id": 0, "confidence": 0.97}
+```
+
+---
+
+## 📦 Dependencies
+
+```
+fastapi
+uvicorn[standard]
+scikit-learn
+pandas
+joblib
+pydantic
