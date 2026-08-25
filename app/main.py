@@ -2,8 +2,9 @@ from contextlib import asynccontextmanager
 
 import joblib
 import pandas as pd
-import numpy as np
 from fastapi import FastAPI
+
+from app.models.schemas import PredictionInput
 
 MODEL_PATH = "ml/saved_model/model.joblib"
 
@@ -33,12 +34,12 @@ def home():
 
 
 @app.post("/predict")
-def predict():
+def predict(data: PredictionInput):
     features = pd.DataFrame([{
-        "sepal length (cm)": 5.1,
-        "sepal width (cm)": 3.5,
-        "petal length (cm)": 1.4,
-        "petal width (cm)": 0.2
+        "sepal length (cm)": data.sepal_length,
+        "sepal width (cm)": data.sepal_width,
+        "petal length (cm)": data.petal_length,
+        "petal width (cm)": data.petal_width
     }])
 
     model = app.state.model
