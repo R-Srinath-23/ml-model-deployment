@@ -1,13 +1,15 @@
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+import uuid
+
 import joblib
 import pandas as pd
 from fastapi import FastAPI
 
 from app.models.schemas import PredictionInput
 
-MODEL_PATH = "ml/saved_model/model.joblib"
-
+MODEL_PATH = Path(__file__).resolve().parent.parent / "ml" / "saved_model" / "model.joblib"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,6 +34,14 @@ app = FastAPI(
 def home():
     return {"message": "Iris ML Prediction API is running"}
 
+@app.get("/health")
+def health():
+    model_loaded = getattr(app.state, "model", None) is not None
+
+    return {
+        "status": "ok",
+        "model_loaded": model_loaded
+    }
 
 @app.post("/predict")
 def predict(data: PredictionInput):
@@ -43,8 +53,18 @@ def predict(data: PredictionInput):
     }])
 
     model = app.state.model
-    prediction = model.predict(features)
+    prediction = model.predict(features)[0]
+
+    confidence = None
+
+    if hasattr(model, "predict_proba"):
+        probabilities = model.predict_proba(features)
+        confidence = float(probabilities.max())
+
+    request_id = str(uuid.uuid4())
 
     return {
-        "prediction": str(prediction[0])
+        "prediction": str(prediction),
+        "confidence": confidence,
+        "request_id": request_id
     }
