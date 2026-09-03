@@ -6,36 +6,41 @@ import time
 
 import joblib
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.config import settings
 from app.exceptions import PredictionError
 
 from app.logging_config import logger
-from app.models.schemas import PredictionInput, PredictionOutput
+
 
 from app.routers.v1 import router as v1_router
 
-MODEL_PATH = Path(__file__).resolve().parent.parent / "ml" / "saved_model" / "model.joblib"
-
-
+# MODEL_PATH = Path(__file__).resolve().parent.parent / "ml" / "saved_model" / "model.joblib"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Loading ML model...")
+    model_path = Path(settings.MODEL_PATH)
 
-    app.state.model = joblib.load(MODEL_PATH)
-
+    if not model_path.exists():
+        logger.error(f"Model file not found: {model_path}")
+        raise FileNotFoundError(
+            f"Model file not found: {model_path}"
+        )
+    
+    app.state.model = joblib.load(model_path)
     logger.info("ML model loaded successfully.")
 
-
+    
     yield
 
     logger.info("Shutting down API...")
 
 
 app = FastAPI(
-    title="Iris ML Prediction API",
+    title=settings.API_TITLE,
     lifespan=lifespan
 )
 

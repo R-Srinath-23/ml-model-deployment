@@ -2,6 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from app.config import settings
 
 LOG_DIR = Path(__file__).resolve().parent.parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
@@ -11,7 +12,13 @@ LOG_FILE = LOG_DIR / "api.log"
 
 def setup_logger():
     logger = logging.getLogger("iris_api")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(
+        getattr(
+            logging,
+            settings.LOG_LEVEL.upper(),
+            logging.INFO
+        )
+        )
 
     if logger.handlers:
         return logger

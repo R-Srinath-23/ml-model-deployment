@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 import pandas as pd
 
+from app.config import settings
 from app.models.schemas import (
     PredictionInput,
     PredictionOutput,
@@ -18,25 +19,25 @@ router = APIRouter(
 )
 
 # Model metadata
-MODEL_VERSION = "1.0"
-MODEL_TYPE = "RandomForestClassifier"
-TRAINING_DATE = "2026-08-23"
+# MODEL_VERSION = "1.0"
+# MODEL_TYPE = "RandomForestClassifier"
+# TRAINING_DATE = "2026-08-23"
 
-EXPECTED_FEATURES = [
-    "sepal length (cm)",
-    "sepal width (cm)",
-    "petal length (cm)",
-    "petal width (cm)",
-]
+# EXPECTED_FEATURES = [
+#     "sepal length (cm)",
+#     "sepal width (cm)",
+#     "petal length (cm)",
+#     "petal width (cm)",
+# ]
 
 
 @router.get("/health")
 def health(request: Request):
-    model_loaded = getattr(request.app.state, "model", None) is not None
+    model = getattr(request.app.state, "model", None)
 
     return {
         "status": "ok",
-        "model_loaded": model_loaded
+        "model_loaded": model is not None
     }
 
 
@@ -72,14 +73,14 @@ def predict(data: PredictionInput, request: Request):
         logger.info(
             f"prediction_success "
             f"request_id={request_id} "
-            f"prediction={prediction} "
+            f"prediction={prediction[0]} "
             f"confidence={confidence}"
         )
 
         return PredictionOutput(
             prediction=str(prediction[0]),
             confidence=confidence,
-            model_version=MODEL_VERSION,
+            model_version=settings.MODEL_VERSION,
             request_id=request_id
         )
 
@@ -107,6 +108,24 @@ def predict_batch(
 
     request_id = request.state.request_id
     batch_size = len(data.inputs)
+
+     # Enforce configuration value
+    if batch_size > settings.MAX_BATCH_SIZE:
+
+        logger.warning(
+            f"batch_size_exceeded "
+            f"request_id={request_id} "
+            f"batch_size={batch_size} "
+            f"max_batch_size={settings.MAX_BATCH_SIZE}"
+        )
+
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Batch size cannot exceed "
+                f"{settings.MAX_BATCH_SIZE}"
+            )
+        )
 
     try:
         model = getattr(request.app.state, "model", None)
@@ -149,10 +168,12 @@ def predict_batch(
             results.append(
                 PredictionOutput(
                     prediction=str(prediction),
-                    confidence=float(confidence)
-                    if confidence is not None
-                    else None,
-                    model_version=MODEL_VERSION,
+                    confidence=(
+                        float(confidence)
+                        if confidence is not None
+                        else None
+                    ),
+                    model_version=settings.MODEL_VERSION,
                     request_id=request_id
                 )
             )
@@ -192,8 +213,13 @@ def model_info(request: Request):
 
     return {
         "model_loaded": model is not None,
-        "model_type": MODEL_TYPE,
-        "model_version": MODEL_VERSION,
-        "training_date": TRAINING_DATE,
-        "expected_features": EXPECTED_FEATURES
+        "model_type": settings.MODEL_TYPE,
+        "model_version": settings.MODEL_VERSION,
+        "training_date": settings.TRAINING_DATE,
+        "expected_features": [
+            "sepal length (cm)",
+            "sepal width (cm)",
+            "petal length (cm)",
+            "petal width (cm)"
+        ]
     }

@@ -15,7 +15,7 @@ class PredictionOutput(BaseModel):
     request_id: str
 
 class PredictionBatchInput(BaseModel):
-    inputs: List[PredictionInput] = Field(..., min_length=1, max_length=100)
+    inputs: List[PredictionInput] = Field(..., min_length=1)
 
 
 class PredictionBatchOutput(BaseModel):
