@@ -16,6 +16,7 @@ from app.logging_config import logger
 
 
 from app.routers.v1 import router as v1_router
+from app.routers.v2 import router as v2_router
 
 # MODEL_PATH = Path(__file__).resolve().parent.parent / "ml" / "saved_model" / "model.joblib"
 
@@ -92,3 +93,4 @@ async def prediction_error_handler(request: Request, exc):
     )
 
 app.include_router(v1_router)
+app.include_router(v2_router)

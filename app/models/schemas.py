@@ -20,3 +20,13 @@ class PredictionBatchInput(BaseModel):
 
 class PredictionBatchOutput(BaseModel):
     predictions: List[PredictionOutput]
+
+class PredictionV2Output(BaseModel):
+
+    prediction: str
+
+    probabilities: dict[str, float]
+
+    model_version: str
+
+    request_id: str
